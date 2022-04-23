@@ -1,4 +1,4 @@
-import vaildateType from "./index";
+import vaildateType from "./src/index";
 
 vaildateType(1, "boolean");
 vaildateType("kw", "boolean");

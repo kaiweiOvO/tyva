@@ -1,4 +1,4 @@
-import { AllTypeOptions, Type, TypeOptions } from "./src/types";
+import { AllTypeOptions, Type, TypeOptions } from "./types";
 
 export default function vaildateType<T>(
   value: T,
