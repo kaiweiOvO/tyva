@@ -2,19 +2,24 @@ import { AllTypeOptions, Type, TypeOptions } from "./types";
 
 export default function vaildateType<T>(
   value: T,
-  type: T extends object ? { [k in keyof T]: AllTypeOptions } : AllTypeOptions
+  type: T extends object
+    ? T extends Iterable<any>
+      ? AllTypeOptions
+      : { [k in keyof T]: AllTypeOptions }
+    : AllTypeOptions
 ): void {
   console.log(value, type);
-  if (typeof value === "object") {
+  if (typeof value === "object" && Array.isArray(value) === false) {
+    // value type is object
     // object | array | TypeOptions
-    if (type !== "array" && typeof type === "string") {
+    if (typeof type === "string") {
       // error object value called type string
       console.log(`\x1B[31munexpected object type ${type}. \x1B[0m`);
     } else {
       // type.keys
       const keys = Object.keys(type as { [k in keyof T]: AllTypeOptions });
 
-      keys.forEach(key => {
+      keys.forEach((key) => {
         const parameter = (value as any)[key];
 
         if (parameter === undefined) {
@@ -31,6 +36,7 @@ export default function vaildateType<T>(
       });
     }
   } else {
+    // value type is Type
     // string | number | bool | undefined | TypeOptions
     if (typeof type === "string") {
       // Type
@@ -50,10 +56,16 @@ export default function vaildateType<T>(
 function checkType(value: unknown, type: Type) {
   if (type === "array" && Array.isArray(value) === false) {
     // value === array
-    console.log(`\x1B[31mexpected type is ${type}, but received ${typeof value}. \x1B[0m`);
+    console.log(
+      `\x1B[31mexpected type is ${type}, but received ${typeof value}. \x1B[0m`
+    );
+    return;
   } else if (typeof value !== type) {
+    if (type === "array") return;
     // value === string | number | bool | undefined
-    console.log(`\x1B[31mexpected type is ${type}, but received ${typeof value}. \x1B[0m`);
+    console.log(
+      `\x1B[31mexpected type is ${type}, but received ${typeof value}. \x1B[0m`
+    );
   }
 }
 
@@ -66,7 +78,13 @@ function checkTypeOption(value: any, option: TypeOptions, key?: string) {
   switch (option.type) {
     case "string":
       // validate string type option
-      validateString(value, option.length, option.maxLen, option.minLen, option.format);
+      validateString(
+        value,
+        option.length,
+        option.maxLen,
+        option.minLen,
+        option.format
+      );
       break;
     case "number":
       // validate number type option
@@ -77,7 +95,13 @@ function checkTypeOption(value: any, option: TypeOptions, key?: string) {
       break;
     case "array":
       // validate array type option
-      validateArray(value, option.length, option.maxLen, option.minLen, option.eachValue);
+      validateArray(
+        value,
+        option.length,
+        option.maxLen,
+        option.minLen,
+        option.eachValue
+      );
       break;
     // other type option
     case "boolean":
@@ -106,29 +130,48 @@ function validateString(
   minLen?: number,
   format?: RegExp
 ) {
-  if (length && value.length !== length) {
-    console.log(`\x1B[31mexpected length ${length}, got value length ${value.length}. \x1B[0m`);
+  checkType(value, "string");
+  if (length !== undefined && value.length !== length) {
+    console.log(
+      `\x1B[31mexpected length ${length}, got value length ${value.length}. \x1B[0m`
+    );
   }
-  if (maxLen && value.length > maxLen) {
-    console.log(`\x1B[31mexpected max length ${maxLen}, got value length ${value.length}. \x1B[0m`);
+  if (maxLen !== undefined && value.length > maxLen) {
+    console.log(
+      `\x1B[31mexpected maximum length ${maxLen}, got value length ${value.length}. \x1B[0m`
+    );
   }
-  if (minLen && value.length < minLen) {
-    console.log(`\x1B[31mexpected min length ${minLen}, got value length ${value.length}. \x1B[0m`);
+  if (minLen !== undefined && value.length < minLen) {
+    console.log(
+      `\x1B[31mexpected minimum length ${minLen}, got value length ${value.length}. \x1B[0m`
+    );
   }
-  if (format && format.test(value) === false) {
-    console.log(`\x1B[31mexpected format ${format}, got mismatched value ${value}. \x1B[0m`);
+  if (format !== undefined && format.test(value) === false) {
+    console.log(
+      `\x1B[31mexpected format ${format}, got mismatched value ${value}. \x1B[0m`
+    );
   }
 }
 
-function validateNumber(value: number, float?: boolean, max?: number, min?: number) {
-  if (float && ~~value === value) {
+function validateNumber(
+  value: number,
+  float?: boolean,
+  max?: number,
+  min?: number
+) {
+  checkType(value, "number");
+  if (float !== undefined && ~~value === value) {
     console.log(`\x1B[31mvalue ${value} is not fload number. \x1B[0m`);
   }
-  if (max && value > max) {
-    console.log(`\x1B[31mvalue ${value} is bigger than maximum value ${max}. \x1B[0m`);
+  if (max !== undefined && value > max) {
+    console.log(
+      `\x1B[31mvalue ${value} is bigger than maximum value ${max}. \x1B[0m`
+    );
   }
-  if (min && value < min) {
-    console.log(`\x1B[31mvalue ${value} is smaller than minimum value ${min}. \x1B[0m`);
+  if (min !== undefined && value < min) {
+    console.log(
+      `\x1B[31mvalue ${value} is smaller than minimum value ${min}. \x1B[0m`
+    );
   }
 }
 
@@ -139,18 +182,25 @@ function validateArray(
   minLen?: number,
   eachValue?: TypeOptions
 ) {
-  if (length && value.length !== length) {
-    console.log(`\x1B[31mexpected length ${length}, got value length ${value.length}. \x1B[0m`);
-  }
-  if (maxLen && value.length > maxLen) {
-    console.log(`\x1B[31mexpected max length ${maxLen}, got value length ${value.length}. \x1B[0m`);
-  }
-  if (minLen && value.length < minLen) {
-    console.log(`\x1B[31mexpected min length ${minLen}, got value length ${value.length}. \x1B[0m`);
-  }
-  if (eachValue && value.some(v => v !== eachValue)) {
+  checkType(value, "array");
+  if (length !== undefined && value.length !== length) {
     console.log(
-      `\x1B[31mexpected array value ${eachValue}, got mismatched value ${value}. \x1B[0m`
+      `\x1B[31mexpected length ${length}, got value length ${value.length}. \x1B[0m`
     );
+  }
+  if (maxLen !== undefined && value.length > maxLen) {
+    console.log(
+      `\x1B[31mexpected max length ${maxLen}, got value length ${value.length}. \x1B[0m`
+    );
+  }
+  if (minLen !== undefined && value.length < minLen) {
+    console.log(
+      `\x1B[31mexpected min length ${minLen}, got value length ${value.length}. \x1B[0m`
+    );
+  }
+  if (eachValue !== undefined) {
+    value.forEach((v) => {
+      vaildateType(v, eachValue);
+    });
   }
 }
