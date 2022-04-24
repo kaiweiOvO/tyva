@@ -1,2 +1,2 @@
-# vaildate-type
+# Tyva
 typescript type validator
