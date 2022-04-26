@@ -1,46 +1,51 @@
-export const StringType = "string";
-export const NumberType = "number";
-export const BooleanType = "boolean";
-export const ObjectType = "object";
-export const UndefinedType = "undefined";
-export const ArrayType = "array";
+export const StringType = 'string';
+export const NumberType = 'number';
+export const BooleanType = 'boolean';
+export const ObjectType = 'object';
+export const UndefinedType = 'undefined';
+export const ArrayType = 'array';
 
-// export type Type = StringType | NumberType | BooleanType | ObjectType | UndefinedType | ArrayType;
-export type Type = "string" | "number" | "boolean" | "object" | "undefined" | "array";
+export type Type = 'string' | 'number' | 'boolean' | 'object' | 'undefined' | 'array';
 
 export interface StringTypeOption {
-  length?: number;
-  maxLen?: number;
-  minLen?: number;
-  format?: RegExp;
+    length?: number;
+    maxLen?: number;
+    minLen?: number;
+    format?: RegExp;
 }
 
 export interface NumberTypeOption {
-  float?: boolean;
-  max?: number;
-  min?: number;
+    float?: boolean;
+    max?: number;
+    min?: number;
 }
 
-export interface ObjectTypeOption {
-  value?: { [k: string]: TypeOptions };
+export interface ObjectTypeOption<T> {
+    values?: { [P in keyof T]?: T[P] extends object ? AllTypeOptions<T[P]> : AllTypeOptions<unknown> };
 }
 
 export interface ArrayTypeOption {
-  length?: number;
-  maxLen?: number;
-  minLen?: number;
-  eachValue?: TypeOptions;
+    length?: number;
+    maxLen?: number;
+    minLen?: number;
+    each?: AllTypeOptions<unknown>;
 }
 
-export type TypeOptions = StringTypeOption &
-  NumberTypeOption &
-  ObjectTypeOption &
-  ArrayTypeOption & {
-    type: Type;
-  };
+export type TypeOptions<T> = StringTypeOption &
+    NumberTypeOption &
+    ObjectTypeOption<T> &
+    ArrayTypeOption & {
+        type: Type;
+    };
 
-export type AllTypeOptions = Type | TypeOptions;
+export type AllTypeOptions<T> = Type | TypeOptions<T>;
 
-export declare function vaildateType<T>(value: T, type: { [k in keyof T]: AllTypeOptions }): void;
+export type ValueType<T> = T extends object
+    ? T extends Iterable<any>
+        ? AllTypeOptions<T>
+        : { [K in keyof T]?: AllTypeOptions<T[K] extends object ? T[K] : unknown> }
+    : AllTypeOptions<T>;
 
-export declare function vaildateType(value: unknown, type: AllTypeOptions): void;
+export function vaildateType<T>(value: T, type: { [k in keyof T]: AllTypeOptions<T> }): void;
+
+export function vaildateType(value: unknown, type: AllTypeOptions<unknown>): void;
