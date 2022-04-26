@@ -1,129 +1,160 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-function vaildateType(value, type) {
-    console.log(value, type);
-    if (typeof value === "object") {
+function vaildateType(value, type, key) {
+    if (typeof value === 'object' && Array.isArray(value) === false) {
+        // value type is object
         // object | array | TypeOptions
-        if (type !== "array" && typeof type === "string") {
+        if (typeof type === 'string') {
             // error object value called type string
-            console.log("\u001B[31munexpected object type ".concat(type, ". \u001B[0m"));
+            checkType(value, type, key);
         }
         else {
             // type.keys
             var keys = Object.keys(type);
-            keys.forEach(function (key) {
-                var parameter = value[key];
-                if (parameter === undefined) {
-                    // unmatched parameter
-                    console.log("\u001B[31munmatched parameter ".concat(key, ". \u001B[0m"));
-                }
-                var option = type[key];
-                if (typeof option === "object") {
-                    checkTypeOption(parameter, option, key);
+            keys.forEach(function (k) {
+                var parameter = value[k];
+                var option = type[k];
+                if (typeof option === 'object') {
+                    checkTypeOption(parameter, option, k);
                 }
                 else {
-                    checkType(parameter, option);
+                    checkType(parameter, option, k);
                 }
             });
         }
     }
     else {
+        // value type is Type
         // string | number | bool | undefined | TypeOptions
-        if (typeof type === "string") {
+        if (typeof type === 'string') {
             // Type
-            checkType(value, type);
+            checkType(value, type, key);
         }
         else {
             // TypeOptions
-            checkTypeOption(value, type);
+            checkTypeOption(value, type, key);
         }
     }
 }
 exports.default = vaildateType;
 /**
- * check value type
- * @param {any} value
- * @param {Type} type
- */
-function checkType(value, type) {
-    if (type === "array" && Array.isArray(value) === false) {
+* check value type
+* @param {any} value
+* @param {Type} type
+*/
+function checkType(value, type, key) {
+    if (type === 'array' && Array.isArray(value) === false) {
         // value === array
-        console.log("\u001B[31mexpected type is ".concat(type, ", but received ").concat(typeof value, ". \u001B[0m"));
+        throw new Error("".concat(key ? "parameter ".concat(key, " ") : '', "expected type is ").concat(type, ", but received ").concat(typeof value, "."));
     }
-    else if (typeof value !== type) {
-        // value === string | number | bool | undefined
-        console.log("\u001B[31mexpected type is ".concat(type, ", but received ").concat(typeof value, ". \u001B[0m"));
+    else if (Array.isArray(value) === true && type !== 'array') {
+        // value === string | number | bool | object | undefined
+        throw new Error("".concat(key ? "parameter ".concat(key, " ") : '', "expected type is ").concat(type, ", but received array."));
+        // eslint-disable-next-line valid-typeof
+    }
+    else if (Array.isArray(value) === false && typeof value !== type) {
+        // value === string | number | bool | object | undefined
+        throw new Error("".concat(key ? "parameter ".concat(key, " ") : '', "expected type is ").concat(type, ", but received ").concat(typeof value, "."));
     }
 }
 /**
- * check value type options
- * @param {any} value
- * @param {TypeOptions} option
- */
+* check value type options
+* @param {any} value
+* @param {TypeOptions} option
+*/
 function checkTypeOption(value, option, key) {
     switch (option.type) {
-        case "string":
+        case 'string':
             // validate string type option
-            validateString(value, option.length, option.maxLen, option.minLen, option.format);
+            validateString(value, option.length, option.maxLen, option.minLen, option.format, key);
             break;
-        case "number":
+        case 'number':
             // validate number type option
-            validateNumber(value, option.float, option.max, option.min);
+            validateNumber(value, option.float, option.max, option.min, key);
             break;
-        case "object":
+        case 'object':
             // todo check object
+            if (option.values) {
+                var keys = Object.keys(option.values);
+                keys.forEach(function (k) {
+                    var parameter = value[k];
+                    var op = option.values[k];
+                    if (typeof op === 'object') {
+                        checkTypeOption(parameter, op, k);
+                    }
+                    else {
+                        checkType(parameter, op, k);
+                    }
+                });
+            }
+            else {
+                checkType(value, 'object', key);
+            }
             break;
-        case "array":
+        case 'array':
             // validate array type option
-            validateArray(value, option.length, option.maxLen, option.minLen, option.eachValue);
+            validateArray(value, option.length, option.maxLen, option.minLen, option.each, key);
             break;
         // other type option
-        case "boolean":
-        case "undefined":
+        case 'boolean':
+            checkType(value, 'boolean', key);
+            break;
+        case 'undefined':
+            // eslint-disable-next-line valid-typeof
             if (typeof value !== option.type) {
-                console.log("\u001B[31m".concat(key ? key + " " : "", "expected type is ").concat(option.type, ", but received ").concat(typeof value, ". \u001B[0m"));
+                throw new Error("".concat(key ? "parameter ".concat(key, " ") : '', "expected type is ").concat(option.type, ", but received ").concat(typeof value, "."));
             }
             break;
         default:
-            console.log("\u001B[31m".concat(key ? key + " " : "", "expected type is ").concat(option.type, ", but received ").concat(typeof value, ". \u001B[0m"));
+            throw new Error("".concat(key ? "parameter ".concat(key, " ") : '', "expected type is ").concat(option.type, ", but received ").concat(typeof value, "."));
     }
 }
-function validateString(value, length, maxLen, minLen, format) {
-    if (length && value.length !== length) {
-        console.log("\u001B[31mexpected length ".concat(length, ", got value length ").concat(value.length, ". \u001B[0m"));
+function validateString(value, length, maxLen, minLen, format, key) {
+    checkType(value, 'string', key);
+    if (length !== undefined && value.length !== length) {
+        throw new Error("".concat(key ? "parameter ".concat(key, " ") : '', "expected length ").concat(length, ", got value length ").concat(value.length, "."));
     }
-    if (maxLen && value.length > maxLen) {
-        console.log("\u001B[31mexpected max length ".concat(maxLen, ", got value length ").concat(value.length, ". \u001B[0m"));
+    if (maxLen !== undefined && value.length > maxLen) {
+        throw new Error("".concat(key ? "parameter ".concat(key, " ") : '', "expected maximum length ").concat(maxLen, ", got value length ").concat(value.length, "."));
     }
-    if (minLen && value.length < minLen) {
-        console.log("\u001B[31mexpected min length ".concat(minLen, ", got value length ").concat(value.length, ". \u001B[0m"));
+    if (minLen !== undefined && value.length < minLen) {
+        throw new Error("".concat(key ? "parameter ".concat(key, " ") : '', "expected minimum length ").concat(minLen, ", got value length ").concat(value.length, "."));
     }
-    if (format && format.test(value) === false) {
-        console.log("\u001B[31mexpected format ".concat(format, ", got mismatched value ").concat(value, ". \u001B[0m"));
-    }
-}
-function validateNumber(value, float, max, min) {
-    if (float && ~~value === value) {
-        console.log("\u001B[31mvalue ".concat(value, " is not fload number. \u001B[0m"));
-    }
-    if (max && value > max) {
-        console.log("\u001B[31mvalue ".concat(value, " is bigger than maximum value ").concat(max, ". \u001B[0m"));
-    }
-    if (min && value < min) {
-        console.log("\u001B[31mvalue ".concat(value, " is smaller than minimum value ").concat(min, ". \u001B[0m"));
+    if (format !== undefined && format.test(value) === false) {
+        throw new Error("".concat(key ? "parameter ".concat(key, " ") : '', "expected format ").concat(format, ", got mismatched value ").concat(value, "."));
     }
 }
-function validateArray(value, length, maxLen, minLen, eachValue) {
-    if (length && value.length !== length) {
-        console.log("\u001B[31mexpected length ".concat(length, ", got value length ").concat(value.length, ". \u001B[0m"));
+function validateNumber(value, float, max, min, key) {
+    checkType(value, 'number', key);
+    if (float === true && value % 1 === 0) {
+        throw new Error("".concat(key ? "parameter ".concat(key, " ") : '', "value ").concat(value, " is not fload number."));
     }
-    if (maxLen && value.length > maxLen) {
-        console.log("\u001B[31mexpected max length ".concat(maxLen, ", got value length ").concat(value.length, ". \u001B[0m"));
+    if (max !== undefined && value > max) {
+        throw new Error("".concat(key ? "parameter ".concat(key, " ") : '', "value ").concat(value, " is bigger than maximum value ").concat(max, "."));
     }
-    if (minLen && value.length < minLen) {
-        console.log("\u001B[31mexpected min length ".concat(minLen, ", got value length ").concat(value.length, ". \u001B[0m"));
+    if (min !== undefined && value < min) {
+        throw new Error("".concat(key ? "parameter ".concat(key, " ") : '', "value ").concat(value, " is smaller than minimum value ").concat(min, "."));
     }
-    if (eachValue && value.some(function (v) { return v !== eachValue; })) {
-        console.log("\u001B[31mexpected array value ".concat(eachValue, ", got mismatched value ").concat(value, ". \u001B[0m"));
+}
+function validateArray(value, length, maxLen, minLen, each, key) {
+    checkType(value, 'array', key);
+    if (length !== undefined && value.length !== length) {
+        throw new Error("".concat(key ? "parameter ".concat(key, " ") : '', "expected length ").concat(length, ", got value length ").concat(value.length, "."));
+    }
+    if (maxLen !== undefined && value.length > maxLen) {
+        throw new Error("".concat(key ? "parameter ".concat(key, " ") : '', "expected maximum length ").concat(maxLen, ", got value length ").concat(value.length, "."));
+    }
+    if (minLen !== undefined && value.length < minLen) {
+        throw new Error("".concat(key ? "parameter ".concat(key, " ") : '', "expected minimum length ").concat(minLen, ", got value length ").concat(value.length, "."));
+    }
+    if (each !== undefined) {
+        value.forEach(function (v) {
+            if (typeof each === 'string') {
+                checkType(v, each, key);
+            }
+            else {
+                vaildateType(v, each, key);
+            }
+        });
     }
 }

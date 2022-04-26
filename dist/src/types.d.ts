@@ -16,22 +16,25 @@ export interface NumberTypeOption {
     max?: number;
     min?: number;
 }
-export interface ObjectTypeOption {
-    value?: {
-        [k: string]: TypeOptions;
+export interface ObjectTypeOption<T> {
+    values?: {
+        [P in keyof T]?: T[P] extends object ? AllTypeOptions<T[P]> : AllTypeOptions<unknown>;
     };
 }
 export interface ArrayTypeOption {
     length?: number;
     maxLen?: number;
     minLen?: number;
-    eachValue?: TypeOptions;
+    each?: AllTypeOptions<unknown>;
 }
-export declare type TypeOptions = StringTypeOption & NumberTypeOption & ObjectTypeOption & ArrayTypeOption & {
+export declare type TypeOptions<T> = StringTypeOption & NumberTypeOption & ObjectTypeOption<T> & ArrayTypeOption & {
     type: Type;
 };
-export declare type AllTypeOptions = Type | TypeOptions;
+export declare type AllTypeOptions<T> = Type | TypeOptions<T>;
+export declare type ValueType<T> = T extends object ? T extends Iterable<any> ? AllTypeOptions<T> : {
+    [K in keyof T]?: AllTypeOptions<T[K] extends object ? T[K] : unknown>;
+} : AllTypeOptions<T>;
 export declare function vaildateType<T>(value: T, type: {
-    [k in keyof T]: AllTypeOptions;
+    [k in keyof T]: AllTypeOptions<T>;
 }): void;
-export declare function vaildateType(value: unknown, type: AllTypeOptions): void;
+export declare function vaildateType(value: unknown, type: AllTypeOptions<unknown>): void;
