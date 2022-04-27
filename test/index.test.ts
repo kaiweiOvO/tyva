@@ -1,5 +1,4 @@
 import validateType from "../src/index";
-import { Type } from "../src/types";
 
 describe("validateType", () => {
   it("validate string", () => {
@@ -56,9 +55,9 @@ describe("validateType", () => {
     expect(() => validateType(1, { type: "undefined" })).toThrowError(
       new Error("expected type is undefined, but received number.")
     );
-    // expect(() => validateType(1, { type: "aaa" as Type })).toThrowError(
-    //   new Error("expected type is aaa, but received number.")
-    // );
+    expect(() => validateType(1, { type: "aaa" as any })).toThrowError(
+      new Error("expected type is aaa, but received number.")
+    );
   });
   it("validate object", () => {
     expect(() => validateType({}, "object")).not.toThrowError();
