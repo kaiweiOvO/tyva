@@ -26,17 +26,17 @@ export interface ObjectTypeOption<T> {
   };
 }
 
-export interface ArrayTypeOption {
+export interface ArrayTypeOption<T> {
   length?: number;
   maxLen?: number;
   minLen?: number;
-  each?: AllTypeOptions<unknown>;
+  each?: AllTypeOptions<T>;
 }
 
 export type TypeOptions<T> = StringTypeOption &
   NumberTypeOption &
   ObjectTypeOption<T> &
-  ArrayTypeOption & {
+  ArrayTypeOption<T> & {
     type: Type;
   };
 
